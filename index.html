@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#E76F51">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="レストラン検索">
+  <link rel="manifest" href="manifest.json">
+  <title>レストラン検索</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #E76F51;
+      --primary-dark: #C85A3C;
+      --bg: #F5F0EB;
+      --card: #FFFFFF;
+      --text: #333333;
+      --muted: #666666;
+      --border: #E0D8D0;
+      --green-bg: #D8F3DC;
+      --yellow: #856404;
+      --yellow-bg: #FFF3CD;
+      --red: #9B1C1C;
+      --red-bg: #FFE5E5;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      min-height: 100vh;
+    }
+
+    /* ─── Header ─── */
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 14px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header h1 { font-size: 18px; font-weight: 700; }
+    .header-btns { display: flex; gap: 4px; }
+    .icon-btn { background: none; border: none; color: white; font-size: 22px; cursor: pointer; padding: 6px; }
+
+    /* ─── Screens ─── */
+    .screen { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+    .screen.active { display: block; }
+
+    /* ─── Setup screen ─── */
+    .setup-screen { text-align: center; padding: 60px 20px 20px; }
+    .setup-screen .emoji { font-size: 72px; margin-bottom: 16px; }
+    .setup-screen h2 { font-size: 22px; margin-bottom: 10px; }
+    .setup-screen p { color: var(--muted); line-height: 1.7; margin-bottom: 24px; }
+
+    /* ─── Card ─── */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    /* ─── Form ─── */
+    .form-group { margin-bottom: 16px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 7px;
+    }
+    .badge-req {
+      background: var(--primary);
+      color: white;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-left: 4px;
+      vertical-align: middle;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    input[type="text"], input[type="date"], input[type="number"],
+    input[type="password"], select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      background: white;
+      color: var(--text);
+      -webkit-appearance: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--primary); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ─── Chips ─── */
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .chip {
+      padding: 8px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: white;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .chip.on { background: var(--primary); border-color: var(--primary); color: white; }
+
+    /* ─── GPS btn ─── */
+    .gps-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 9px 14px;
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      color: var(--text);
+      transition: all 0.2s;
+    }
+    .gps-btn.got { border-color: #2D6A4F; color: #2D6A4F; background: var(--green-bg); }
+
+    /* ─── Optional accordion ─── */
+    .opt-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+      padding: 4px 0;
+    }
+    .opt-body { display: none; margin-top: 16px; }
+    .opt-body.open { display: block; }
+
+    /* ─── Buttons ─── */
+    .btn-primary {
+      width: 100%;
+      padding: 16px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .btn-primary:active { background: var(--primary-dark); }
+    .btn-primary:disabled { background: #CCC; cursor: not-allowed; }
+    .btn-outline {
+      padding: 10px 20px;
+      background: white;
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+      border-radius: 10px;
+      font-size: 15px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-more {
+      width: 100%;
+      padding: 14px;
+      background: white;
+      color: var(--primary);
+      border: 2px dashed var(--primary);
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 8px;
+      transition: all 0.2s;
+    }
+    .btn-more:disabled { color: #999; border-color: #CCC; cursor: not-allowed; }
+
+    /* ─── Loading ─── */
+    .loading-wrap { text-align: center; padding: 80px 20px; }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-wrap p { color: var(--muted); font-size: 15px; }
+
+    /* ─── Results ─── */
+    .results-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .results-top h2 { font-size: 18px; }
+    .condition-summary { font-size: 13px; color: var(--muted); line-height: 1.8; margin-bottom: 16px; }
+
+    /* ─── Copy bar ─── */
+    .copy-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .copy-bar button {
+      flex: 1;
+      padding: 11px 8px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      border: 1.5px solid var(--border);
+      background: white;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .copy-bar button:active { background: var(--bg); }
+
+    /* ─── Result content ─── */
+    .result-content { font-size: 14px; line-height: 1.75; }
+    .result-content h2 {
+      font-size: 17px;
+      color: var(--primary);
+      margin: 24px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--bg);
+    }
+    .result-content h2:first-child { margin-top: 0; }
+    .result-content h3 { font-size: 15px; margin: 12px 0 6px; }
+    .result-content table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+    .result-content th {
+      text-align: left;
+      color: var(--muted);
+      font-weight: 600;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--bg);
+      white-space: nowrap;
+      min-width: 90px;
+    }
+    .result-content td { padding: 7px 10px; border-bottom: 1px solid var(--bg); word-break: break-word; }
+    .result-content ul { padding-left: 18px; margin: 6px 0; }
+    .result-content li { margin-bottom: 4px; }
+    .result-content a { color: var(--primary); word-break: break-all; }
+    .result-content hr { border: none; border-top: 2px solid var(--bg); margin: 20px 0; }
+    .result-content p { margin-bottom: 8px; }
+    .tag-check {
+      background: var(--yellow-bg);
+      color: var(--yellow);
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    /* ─── History ─── */
+    .history-item {
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+      margin-bottom: 12px;
+    }
+    .history-item:active { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .history-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+    .history-meta { font-size: 12px; color: var(--muted); }
+
+    /* ─── Error ─── */
+    .error-box {
+      background: var(--red-bg);
+      border: 1.5px solid #FFB3B3;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .error-box p { color: var(--red); margin-bottom: 16px; line-height: 1.6; }
+
+    .spacer { height: 60px; }
+    @media (max-width: 380px) { .row2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header" id="header" style="display:none">
+  <h1>🍽️ レストラン検索</h1>
+  <div class="header-btns">
+    <button class="icon-btn" onclick="goHistory()" title="履歴">🕐</button>
+    <button class="icon-btn" onclick="goSettings()" title="設定">⚙️</button>
+  </div>
+</div>
+
+<!-- ════ SCREEN: Setup ════ -->
+<div class="screen active setup-screen" id="screenSetup">
+  <div class="emoji">🍽️</div>
+  <h2>レストラン検索</h2>
+  <p>Gemini APIキーを入力して始めてください。<br>キーはこの端末のみに保存され、<br>外部には一切送信されません。</p>
+  <div class="card">
+    <div class="form-group">
+      <label>Gemini APIキー</label>
+      <input type="password" id="setupKey" placeholder="AIza..." autocomplete="off">
+    </div>
+    <button class="btn-primary" onclick="saveKey()">始める</button>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-top:12px">
+    <a href="https://aistudio.google.com/" style="color:var(--primary)">Google AI Studio</a> で無料取得できます
+  </p>
+</div>
+
+<!-- ════ SCREEN: Search Form ════ -->
+<div class="screen" id="screenSearch">
+  <div class="card" style="margin-top:20px">
+    <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">必須項目</p>
+    <div class="form-group">
+      <label>📍 エリア <span class="badge-req">必須</span></label>
+      <input type="text" id="area" placeholder="例：京都駅周辺、烏丸五条" autocomplete="off">
+      <button class="gps-btn" id="gpsBtn" onclick="getGps()">📡 現在地を使う</button>
+    </div>
+    <div class="row2">
+      <div class="form-group">
+        <label>📅 日付 <span class="badge-req">必須</span></label>
+        <input type="date" id="date">
+      </div>
+      <div class="form-group">
+        <label>👥 人数 <span class="badge-req">必須</span></label>
+        <input type="number" id="people" placeholder="例：23" min="1" max="500">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>🍷 ジャンル・雰囲気 <span class="badge-req">必須</span></label>
+      <div class="chips" id="genreChips">
+        <button class="chip" onclick="toggleChip(this)">ビストロ</button>
+        <button class="chip" onclick="toggleChip(this)">ワイン</button>
+        <button class="chip" onclick="toggleChip(this)">イタリアン</button>
+        <button class="chip" onclick="toggleChip(this)">フレンチ</button>
+        <button class="chip" onclick="toggleChip(this)">和食</button>
+        <button class="chip" onclick="toggleChip(this)">居酒屋</button>
+        <button class="chip" onclick="toggleChip(this)">面白め</button>
+        <button class="chip" onclick="toggleChip(this)">かっちり</button>
+      </div>
+      <input type="text" id="genreFree" placeholder="その他・自由入力（炭火焼き、クラフトビールなど）">
+    </div>
+  </div>
+
+  <div class="card">
+    <button class="opt-toggle" onclick="toggleOpt()">
+      <span id="optArrow">▶</span> オプション（任意）
+    </button>
+    <div class="opt-body" id="optBody">
+      <div class="form-group">
+        <label>🚪 個室・貸切</label>
+        <select id="privateRoom">
+          <option value="">こだわらない</option>
+          <option value="個室希望">個室希望</option>
+          <option value="貸切希望">貸切希望</option>
+          <option value="個室または貸切">どちらでも可</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>🎉 目的・シーン</label>
+        <select id="occasion">
+          <option value="">指定なし</option>
+          <option value="歓送迎会">歓送迎会</option>
+          <option value="誕生日・記念日">誕生日・記念日</option>
+          <option value="接待・会食">接待・会食</option>
+          <option value="カジュアルな飲み会">カジュアルな飲み会</option>
+          <option value="女子会">女子会</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>💰 予算感</label>
+        <select id="budget">
+          <option value="普通（〜1万円/人）">普通（〜1万円/人）</option>
+          <option value="やや高め（1〜2万円/人）">やや高め（1〜2万円/人）</option>
+          <option value="高め（2万円以上/人）">高め（2万円以上/人）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>🚬 喫煙</label>
+        <select id="smoking">
+          <option value="">こだわらない</option>
+          <option value="禁煙希望">禁煙希望</option>
+          <option value="喫煙可希望">喫煙可希望</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>🍻 二次会</label>
+        <div class="chips">
+          <button class="chip" id="nijikaiChip" onclick="toggleNijiKai()">二次会スポットも調べる</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="doSearch()">🔍 検索する</button>
+  <div class="spacer"></div>
+</div>
+
+<!-- ════ SCREEN: Loading ════ -->
+<div class="screen" id="screenLoading">
+  <div class="loading-wrap">
+    <div class="spinner"></div>
+    <p id="loadingMsg">レストランを検索中...</p>
+    <p style="font-size:13px;margin-top:8px;color:#aaa">30秒ほどかかる場合があります</p>
+  </div>
+</div>
+
+<!-- ════ SCREEN: Results ════ -->
+<div class="screen" id="screenResults">
+  <div style="margin-top:20px">
+    <div class="results-top">
+      <h2>検索結果</h2>
+      <button class="btn-outline" onclick="goSearch()">← 戻る</button>
+    </div>
+    <div class="condition-summary" id="condSummary"></div>
+
+    <!-- コピー・シェアバー -->
+    <div class="copy-bar">
+      <button id="copyBtn" onclick="copyResults()">📋 コピー</button>
+      <button id="shareBtn" onclick="shareResults()">📤 LINEで送る</button>
+    </div>
+
+    <!-- 結果本文（累積で追記される） -->
+    <div class="card result-content" id="resultBody"></div>
+
+    <!-- さらに10店舗ボタン -->
+    <button class="btn-more" id="moreBtn" onclick="doMore()">➕ さらに10店舗を追加</button>
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<!-- ════ SCREEN: History ════ -->
+<div class="screen" id="screenHistory">
+  <div style="margin-top:20px">
+    <div class="results-top">
+      <h2>🕐 検索履歴</h2>
+      <button class="btn-outline" onclick="goSearch()">← 戻る</button>
+    </div>
+    <div id="historyList"></div>
+    <button class="btn-outline" onclick="clearHistory()" style="width:100%;margin-top:4px">🗑️ 履歴を削除</button>
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<!-- ════ SCREEN: Settings ════ -->
+<div class="screen" id="screenSettings">
+  <div style="margin-top:20px">
+    <h2 style="margin-bottom:20px">設定</h2>
+    <div class="card">
+      <div class="form-group">
+        <label>Gemini APIキー</label>
+        <input type="password" id="settingsKey" placeholder="AIza...">
+      </div>
+      <button class="btn-primary" onclick="updateKey()" style="margin-bottom:12px">保存</button>
+      <button class="btn-outline" onclick="goSearch()" style="width:100%">戻る</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── State ───────────────────────────────────────────────
+  let gpsCoords  = null;
+  let nijikai    = false;
+  let currentCond    = null;
+  let currentExclude = [];   // 表示済み店舗名リスト
+  let allRawText     = '';   // コピー用の累積テキスト
+
+  // ─── Init ────────────────────────────────────────────────
+  window.addEventListener('load', () => {
+    setDefaultDate();
+    if (localStorage.getItem('gemini_key')) goSearch();
+  });
+
+  function setDefaultDate() {
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+  }
+
+  // ─── Screen routing ──────────────────────────────────────
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.getElementById('header').style.display = id === 'screenSetup' ? 'none' : 'flex';
+    window.scrollTo(0, 0);
+  }
+  function goSearch()   { show('screenSearch'); }
+  function goSettings() {
+    document.getElementById('settingsKey').value = localStorage.getItem('gemini_key') || '';
+    show('screenSettings');
+  }
+
+  // ─── API key ─────────────────────────────────────────────
+  function saveKey() {
+    const k = document.getElementById('setupKey').value.trim();
+    if (!k) { alert('APIキーを入力してください'); return; }
+    localStorage.setItem('gemini_key', k);
+    goSearch();
+  }
+  function updateKey() {
+    const k = document.getElementById('settingsKey').value.trim();
+    if (!k) { alert('APIキーを入力してください'); return; }
+    localStorage.setItem('gemini_key', k);
+    alert('保存しました');
+    goSearch();
+  }
+
+  // ─── Form helpers ────────────────────────────────────────
+  function toggleChip(btn)  { btn.classList.toggle('on'); }
+  function toggleNijiKai()  { nijikai = !nijikai; document.getElementById('nijikaiChip').classList.toggle('on', nijikai); }
+  function toggleOpt() {
+    const body = document.getElementById('optBody');
+    const arrow = document.getElementById('optArrow');
+    body.classList.toggle('open');
+    arrow.textContent = body.classList.contains('open') ? '▼' : '▶';
+  }
+
+  // ─── GPS ─────────────────────────────────────────────────
+  async function getGps() {
+    if (!navigator.geolocation) { alert('位置情報に対応していません'); return; }
+    const btn = document.getElementById('gpsBtn');
+    btn.textContent = '📡 取得中...';
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        gpsCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        try {
+          const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsCoords.lat}&lon=${gpsCoords.lng}&format=json&accept-language=ja`);
+          const data = await res.json();
+          const addr = data.address;
+          const place = addr.suburb || addr.neighbourhood || addr.quarter || addr.town || addr.city_district || '';
+          const city  = addr.city || addr.county || '';
+          document.getElementById('area').value = [city, place].filter(Boolean).join(' ') || `現在地付近（${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lng.toFixed(4)}）`;
+        } catch {
+          document.getElementById('area').value = `現在地付近（${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lng.toFixed(4)}）`;
+        }
+        btn.innerHTML = '✅ 現在地を取得';
+        btn.classList.add('got');
+      },
+      () => { btn.textContent = '📡 現在地を使う'; alert('位置情報の取得に失敗しました'); },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  function getDow(dateStr) {
+    return ['日','月','火','水','木','金','土'][new Date(dateStr).getDay()] + '曜日';
+  }
+
+  // ─── New search ──────────────────────────────────────────
+  function doSearch() {
+    const area   = document.getElementById('area').value.trim();
+    const date   = document.getElementById('date').value;
+    const people = document.getElementById('people').value.trim();
+    const free   = document.getElementById('genreFree').value.trim();
+    const chips  = [...document.querySelectorAll('#genreChips .chip.on')].map(b => b.textContent);
+    const genres = [...chips, ...(free ? [free] : [])];
+
+    if (!area)          { alert('エリアを入力してください'); return; }
+    if (!date)          { alert('日付を選択してください'); return; }
+    if (!people)        { alert('人数を入力してください'); return; }
+    if (!genres.length) { alert('ジャンル・雰囲気を選んでください'); return; }
+
+    const now = new Date();
+    currentCond = {
+      area, date, people,
+      dow:         getDow(date),
+      genre:       genres.join('・'),
+      privateRoom: document.getElementById('privateRoom').value,
+      occasion:    document.getElementById('occasion').value,
+      budget:      document.getElementById('budget').value,
+      smoking:     document.getElementById('smoking').value,
+      nijikai,
+      currentTime: now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+    };
+    currentExclude = [];
+    allRawText     = '';
+
+    document.getElementById('resultBody').innerHTML = '';
+    document.getElementById('loadingMsg').textContent = 'レストランを検索中...';
+    show('screenLoading');
+
+    callGemini(buildPrompt(currentCond, currentExclude))
+      .then(text => {
+        allRawText     = text;
+        currentExclude = extractNames(text);
+        saveHistory(currentCond, text);
+        renderResults(text, true);
+      })
+      .catch(err => showError(err.message));
+  }
+
+  // ─── Add more ────────────────────────────────────────────
+  async function doMore() {
+    const btn = document.getElementById('moreBtn');
+    btn.disabled = true;
+    btn.textContent = '🔍 検索中...';
+
+    try {
+      const text = await callGemini(buildPrompt(currentCond, currentExclude));
+      allRawText    += '\n' + text;
+      currentExclude = [...currentExclude, ...extractNames(text)];
+      updateHistory(currentCond, allRawText);
+
+      // 結果を追記
+      const div = document.createElement('div');
+      div.innerHTML = md2html(text);
+      document.getElementById('resultBody').appendChild(div);
+
+      btn.disabled = false;
+      btn.textContent = `➕ さらに10店舗（現在${currentExclude.length}店舗表示中）`;
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = `➕ さらに10店舗（現在${currentExclude.length}店舗表示中）`;
+      alert('エラー: ' + e.message);
+    }
+  }
+
+  // ─── Prompt ──────────────────────────────────────────────
+  function buildPrompt(c, exclude = []) {
+    const dateJa = new Date(c.date).toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric' });
+    const opts = [
+      c.privateRoom && `個室/貸切: ${c.privateRoom}`,
+      c.occasion    && `目的: ${c.occasion}`,
+      c.smoking     && `喫煙: ${c.smoking}`,
+    ].filter(Boolean).map(s => `- ${s}`).join('\n');
+
+    const excludeStr = exclude.length
+      ? `\n【除外リスト（以下の店舗は除く・重複不可）】\n${exclude.map(n => `- ${n}`).join('\n')}`
+      : '';
+
+    return `あなたはレストラン検索の専門家です。Web検索を活用して以下の条件に合うレストランを10店舗調べ、各店の情報をまとめてください。${excludeStr}
+
+【検索条件】
+- エリア: ${c.area}
+- 日付: ${dateJa}（${c.dow}）
+- 現在時刻: ${c.currentTime}
+- 人数: ${c.people}名
+- ジャンル・雰囲気: ${c.genre}
+- 予算: ${c.budget}
+${opts}
+
+【各店について必ず確認する項目】
+1. 定休日・営業時間 ─ ${dateJa}（${c.dow}）が定休日でないか。現在時刻（${c.currentTime}）で営業中かも判定。変則パターンも確認
+2. ネット予約の可否 ─ ホットペッパー・一休・ぐるなびなどのURLも記載
+3. ${c.people}名が収容可能か ─ 個室・貸切・フロア貸切の有無
+4. 雰囲気の分類 ─ カジュアル / ちょっとかっちり / 面白め・コンセプト系 など
+5. 価格帯 ─ 一人あたりの目安、コース料金、飲み放題の有無（税込か明記）
+6. 公式サイトURL
+
+【注意事項】
+- 情報が確認できない項目は「⚠️ 要確認」と表示
+- 複数ソースで情報が食い違う場合は「⚠️ 要確認（情報に差異あり）」
+- 営業時間外なら「⏰ 現在は営業時間外」と明示
+- 指定日が近い場合は「お早めに予約を」と添えること
+
+【出力形式（必ずこの形式で）】
+---
+## 店名
+
+| 項目 | 内容 |
+|------|------|
+| ジャンル | |
+| アクセス | |
+| 収容人数 | |
+| 雰囲気 | |
+| 価格帯 | |
+| 営業時間 | |
+| ${dateJa}（${c.dow}）の営業 | ✅ 営業 / ❌ 定休 / ⚠️ 要確認 |
+| 現在（${c.currentTime}）の状況 | ✅ 営業中 / ⏰ 営業時間外 / ⚠️ 要確認 |
+| ネット予約 | ✅ 可 / ❌ 不可 / ⚠️ 要確認 |
+| 個室/貸切 | |
+
+**おすすめポイント・注意点:** （2〜3行）
+
+**リンク:** 公式サイト・予約ページのURLを記載
+---
+${c.nijikai ? '\n【二次会スポット】\n上記の各店周辺で2軒目に使いやすいバー・ワインバー・居酒屋を3店舗リストアップしてください。' : ''}`;
+  }
+
+  // ─── Gemini API ──────────────────────────────────────────
+  async function callGemini(prompt) {
+    const key = localStorage.getItem('gemini_key');
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ googleSearch: {} }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 8192 }
+        })
+      }
+    );
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error?.message || `APIエラー (${res.status})`);
+    }
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('結果が取得できませんでした');
+    return text;
+  }
+
+  // ─── Markdown renderer ───────────────────────────────────
+  function inline(s) {
+    return s
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/⚠️\s*要確認(\（[^）]*）)?/g, '<span class="tag-check">⚠️ 要確認$1</span>')
+      .replace(/✅/g, '<span style="color:#1B4332">✅</span>')
+      .replace(/❌/g, '<span style="color:#9B1C1C">❌</span>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+      .replace(/(?<!href=")https?:\/\/[^\s<,）\]"]+/g, url => `<a href="${url}" target="_blank">${url}</a>`);
+  }
+
+  function md2html(text) {
+    const lines = text.split('\n');
+    const out = [];
+    let i = 0;
+    while (i < lines.length) {
+      const line    = lines[i];
+      const trimmed = line.trim();
+      if (/^---+$/.test(trimmed))  { out.push('<hr>'); i++; continue; }
+      if (/^## /.test(line))       { out.push(`<h2>${inline(line.slice(3).trim())}</h2>`); i++; continue; }
+      if (/^### /.test(line))      { out.push(`<h3>${inline(line.slice(4).trim())}</h3>`); i++; continue; }
+      if (/^\|/.test(trimmed)) {
+        const rows = [];
+        while (i < lines.length && /^\|/.test(lines[i].trim())) {
+          const row = lines[i++];
+          if (/^\|[-| :]+\|$/.test(row.trim())) continue;
+          rows.push(row.split('|').slice(1, -1));
+        }
+        if (rows.length) {
+          out.push('<table>' + rows.map(cells =>
+            '<tr>' + cells.map((c, idx) =>
+              `<${idx===0?'th':'td'}>${inline(c.trim())}</${idx===0?'th':'td'}>`
+            ).join('') + '</tr>'
+          ).join('') + '</table>');
+        }
+        continue;
+      }
+      if (/^[-*] /.test(line)) {
+        const items = [];
+        while (i < lines.length && /^[-*] /.test(lines[i]))
+          items.push(`<li>${inline(lines[i++].replace(/^[-*] /,'').trim())}</li>`);
+        out.push('<ul>' + items.join('') + '</ul>');
+        continue;
+      }
+      if (trimmed === '') { out.push('<br>'); i++; continue; }
+      out.push(`<p>${inline(line)}</p>`);
+      i++;
+    }
+    return out.join('\n');
+  }
+
+  // ─── Render results ──────────────────────────────────────
+  function renderResults(text, isFirst) {
+    if (isFirst) {
+      document.getElementById('condSummary').innerHTML =
+        `📍 ${currentCond.area}　📅 ${currentCond.date}（${currentCond.dow}）　👥 ${currentCond.people}名<br>` +
+        `🍷 ${currentCond.genre}　💰 ${currentCond.budget}`;
+      document.getElementById('resultBody').innerHTML = md2html(text);
+    }
+    document.getElementById('moreBtn').textContent =
+      `➕ さらに10店舗（現在${currentExclude.length}店舗表示中）`;
+    document.getElementById('moreBtn').disabled = false;
+    show('screenResults');
+  }
+
+  function showError(msg) {
+    document.getElementById('condSummary').innerHTML = '';
+    document.getElementById('resultBody').innerHTML = `
+      <div class="error-box">
+        <p>❌ エラーが発生しました<br><small>${msg}</small></p>
+        <button class="btn-outline" onclick="goSearch()">戻る</button>
+      </div>`;
+    show('screenResults');
+  }
+
+  // ─── Copy / Share ─────────────────────────────────────────
+  function toPlainText() {
+    const header =
+      `🍽️ レストラン検索結果\n` +
+      `📍 ${currentCond.area}　📅 ${currentCond.date}（${currentCond.dow}）　👥 ${currentCond.people}名\n` +
+      `🍷 ${currentCond.genre}　💰 ${currentCond.budget}\n\n`;
+    const body = allRawText
+      .replace(/\*\*/g, '')
+      .replace(/^## /gm, '■ ')
+      .replace(/^### /gm, '◆ ')
+      .replace(/^\|[-| :]+\|$/gm, '')
+      .replace(/^\| ?(.+?) ?\| ?(.+?) ?\|?$/gm, '$1: $2')
+      .replace(/^---+$/gm, '─────────')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1（$2）')
+      .trim();
+    return header + body;
+  }
+
+  function copyResults() {
+    const btn = document.getElementById('copyBtn');
+    navigator.clipboard.writeText(toPlainText())
+      .then(() => {
+        btn.textContent = '✅ コピーしました';
+        setTimeout(() => btn.textContent = '📋 コピー', 2000);
+      })
+      .catch(() => alert('コピーに失敗しました'));
+  }
+
+  function shareResults() {
+    if (navigator.share) {
+      navigator.share({ title: '🍽️ レストラン検索結果', text: toPlainText() })
+        .catch(() => {});
+    } else {
+      copyResults();
+      document.getElementById('shareBtn').textContent = '✅ コピーしました';
+      setTimeout(() => document.getElementById('shareBtn').textContent = '📤 LINEで送る', 2000);
+    }
+  }
+
+  // ─── Extract names from markdown ─────────────────────────
+  function extractNames(text) {
+    return [...text.matchAll(/^## (.+)$/gm)].map(m => m[1].trim());
+  }
+
+  // ─── History ─────────────────────────────────────────────
+  function getHistory() {
+    try { return JSON.parse(localStorage.getItem('restaurant_history') || '[]'); }
+    catch { return []; }
+  }
+
+  function saveHistory(cond, text) {
+    const history = getHistory();
+    history.unshift({ id: Date.now(), ts: new Date().toLocaleString('ja-JP'), cond, text });
+    if (history.length > 5) history.length = 5;
+    localStorage.setItem('restaurant_history', JSON.stringify(history));
+  }
+
+  function updateHistory(cond, text) {
+    const history = getHistory();
+    if (history.length && history[0].cond.area === cond.area) {
+      history[0].text = text;
+      localStorage.setItem('restaurant_history', JSON.stringify(history));
+    }
+  }
+
+  function goHistory() {
+    const history = getHistory();
+    const list = document.getElementById('historyList');
+    if (!history.length) {
+      list.innerHTML = '<p style="color:var(--muted);text-align:center;padding:40px 0">検索履歴がありません</p>';
+    } else {
+      list.innerHTML = history.map(h => `
+        <div class="history-item card" onclick="loadHistory(${h.id})">
+          <div class="history-title">📍 ${h.cond.area}　🍷 ${h.cond.genre}</div>
+          <div class="history-meta">📅 ${h.cond.date}　👥 ${h.cond.people}名　${h.ts}</div>
+        </div>
+      `).join('');
+    }
+    show('screenHistory');
+  }
+
+  function loadHistory(id) {
+    const entry = getHistory().find(h => h.id === id);
+    if (!entry) return;
+    currentCond    = entry.cond;
+    currentExclude = extractNames(entry.text);
+    allRawText     = entry.text;
+    document.getElementById('condSummary').innerHTML =
+      `📍 ${entry.cond.area}　📅 ${entry.cond.date}（${entry.cond.dow}）　👥 ${entry.cond.people}名<br>` +
+      `🍷 ${entry.cond.genre}　💰 ${entry.cond.budget}`;
+    document.getElementById('resultBody').innerHTML = md2html(entry.text);
+    document.getElementById('moreBtn').textContent =
+      `➕ さらに10店舗（現在${currentExclude.length}店舗表示中）`;
+    show('screenResults');
+  }
+
+  function clearHistory() {
+    if (!confirm('履歴をすべて削除しますか？')) return;
+    localStorage.removeItem('restaurant_history');
+    goHistory();
+  }
+</script>
+</body>
+</html>

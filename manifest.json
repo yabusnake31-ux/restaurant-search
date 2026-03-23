@@ -1,0 +1,24 @@
+{
+  "name": "レストラン検索",
+  "short_name": "レストラン",
+  "description": "Gemini AIを使ったレストラン検索アプリ",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#F5F0EB",
+  "theme_color": "#E76F51",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
