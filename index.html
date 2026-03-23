@@ -544,12 +544,15 @@
       async pos => {
         gpsCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         try {
-          const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsCoords.lat}&lon=${gpsCoords.lng}&format=json&accept-language=ja`);
+          const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsCoords.lat}&lon=${gpsCoords.lng}&format=json&accept-language=ja&zoom=17`);
           const data = await res.json();
           const addr = data.address;
-          const place = addr.suburb || addr.neighbourhood || addr.quarter || addr.town || addr.city_district || '';
-          const city  = addr.city || addr.county || '';
-          document.getElementById('area').value = [city, place].filter(Boolean).join(' ') || `現在地付近（${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lng.toFixed(4)}）`;
+          // 細かい順に取得（町丁目 → 大字 → 字 → suburb → neighbourhood → 区）
+          const detail = addr.quarter || addr.hamlet || addr.village ||
+                         addr.suburb  || addr.neighbourhood || addr.city_district || '';
+          const city   = addr.city || addr.town || addr.county || '';
+          const label  = [city, detail].filter(Boolean).join('');
+          document.getElementById('area').value = label || `現在地付近（${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lng.toFixed(4)}）`;
         } catch {
           document.getElementById('area').value = `現在地付近（${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lng.toFixed(4)}）`;
         }
@@ -590,6 +593,7 @@
       smoking:     document.getElementById('smoking').value,
       nijikai,
       currentTime: now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+      gps: gpsCoords ? `${gpsCoords.lat.toFixed(5)},${gpsCoords.lng.toFixed(5)}` : null,
     };
     currentExclude = [];
     allRawText     = '';
@@ -650,7 +654,7 @@
     return `あなたはレストラン検索の専門家です。Web検索を活用して以下の条件に合うレストランを10店舗調べ、各店の情報をまとめてください。${excludeStr}
 
 【検索条件】
-- エリア: ${c.area}
+- エリア: ${c.area}${c.gps ? `（GPS座標: ${c.gps}）` : ''}
 - 日付: ${dateJa}（${c.dow}）
 - 現在時刻: ${c.currentTime}
 - 人数: ${c.people}名
@@ -659,7 +663,7 @@
 ${opts}
 
 【各店について必ず確認する項目】
-1. 定休日・営業時間 ─ ${dateJa}（${c.dow}）が定休日でないか。現在時刻（${c.currentTime}）で営業中かも判定。変則パターンも確認
+1. 定休日・営業時間 ─ ${dateJa}（${c.dow}）が定休日でないか。現在時刻（${c.currentTime}）で営業中かも判定。変則パターンも確認${c.gps ? `\n※GPS座標（${c.gps}）から徒歩圏内のお店を優先してください` : ''}
 2. ネット予約の可否 ─ ホットペッパー・一休・ぐるなびなどのURLも記載
 3. ${c.people}名が収容可能か ─ 個室・貸切・フロア貸切の有無
 4. 雰囲気の分類 ─ カジュアル / ちょっとかっちり / 面白め・コンセプト系 など
