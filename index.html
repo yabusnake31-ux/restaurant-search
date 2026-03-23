@@ -744,7 +744,13 @@ ${c.nijikai ? '\n【二次会スポット】\n上記の各店周辺で2軒目に
       const line    = lines[i];
       const trimmed = line.trim();
       if (/^---+$/.test(trimmed))  { out.push('<hr>'); i++; continue; }
-      if (/^## /.test(line))       { out.push(`<h2>${inline(line.slice(3).trim())}</h2>`); i++; continue; }
+      if (/^## /.test(line)) {
+        const name = line.slice(3).trim();
+        const q = encodeURIComponent(name + ' ' + (currentCond?.area || ''));
+        const mapsUrl = `https://www.google.com/maps/search/${q}`;
+        out.push(`<h2>${inline(name)} <a href="${mapsUrl}" target="_blank" style="font-size:12px;font-weight:normal;color:var(--primary);border:1.5px solid var(--primary);padding:2px 9px;border-radius:10px;text-decoration:none;white-space:nowrap">🗺️ マップ</a></h2>`);
+        i++; continue;
+      }
       if (/^### /.test(line))      { out.push(`<h3>${inline(line.slice(4).trim())}</h3>`); i++; continue; }
       if (/^\|/.test(trimmed)) {
         const rows = [];
